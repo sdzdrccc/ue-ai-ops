@@ -1,0 +1,6 @@
+# ★ 编辑期临时产物
+*.bak
+*.bak3
+*.tmp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,89 @@
+# 许可（双许可）
+
+★ **本项目采用「代码 + 文档」双许可** —— 因为它的主体是**文档**，而附带**脚本**：
+
+| 内容 | 许可 | 文件 |
+|---|---|---|
+| ★ **脚本 / 代码** | ★ **MIT** | `scripts/*.sh` |
+| ★ **文档 / 知识内容** | ★ **CC BY 4.0** | 其余一切（`*.md` · `SKILL.md` · `references/` · `docs/` · `README.md` · `INSTALL.md`） |
+
+★ **简单说**：
+- 想把**脚本**拿去集成到你的工具链 → ★ **MIT**（随便用，署名即可）
+- 想**引用 / 转载 / 翻译**这里的方法与结论 → ★ **CC BY 4.0**（注明来源即可）
+
+---
+
+## 1. 文档：CC BY 4.0
+
+`README.md` · `INSTALL.md` · `SKILL.md` · `references/` · `docs/`
+下（以及本文件）的全部**文字内容**，采用
+**Creative Commons Attribution 4.0 International (CC BY 4.0)**。
+
+★ **你可以**：★ 复制、分发、改编、商用 —— **只要注明来源**。
+★ **完整条款**：https://creativecommons.org/licenses/by/4.0/legalcode
+
+---
+
+## 2. 脚本：MIT
+
+`scripts/` 下的全部脚本，采用 **MIT License**：
+
+```
+MIT License
+
+Copyright (c) 2026 ue-ai-ops contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+---
+
+## 3. ★★ 免责与边界（★ 重要，请读）
+
+### 3.1 与 Epic Games 的关系
+
+★ 本项目是**独立整理的经验与文档**，★ **与 Epic Games 无任何隶属或背书关系**。
+★ 「Unreal」「Unreal Engine」「UE」是 Epic Games 的商标。
+
+### 3.2 关于 Unreal Engine 内容
+
+★ 本项目**引用**了 Unreal Engine 的：
+- **公开文档**（地址、默认值、命令名）—— ★ **引用事实与接口名**
+- **源码位置**（文件路径、行号、符号名）—— ★ **指引读者自己去看**
+
+★ **本项目不包含 Unreal Engine 源代码的再分发。**
+★ 使用 Unreal Engine 本身请遵守 **Epic 的 EULA**。
+
+### 3.3 关于 `docs/evidence/`
+
+★ 该目录是**原始排查记录**，其中的本机路径等**已脱敏**（见各文件顶部说明）。
+★ 内容反映**当时的实测结论**，★ **不保证在所有版本/环境下成立**（尤其官方那套标注了 Experimental）。
+
+### 3.4 无担保
+
+★ 本项目内容为**经验整理**，★ **按「现状」提供，不附带任何担保**。
+★ **照做前请自行评估风险** —— 尤其是涉及改文件、编译、资产操作的部分。
+
+---
+
+## 4. 贡献
+
+★ 提交贡献即视为同意：★ 你的贡献按**上述双许可**发布。
+★ 贡献前请读 `README.md` §4.2 的三条硬纪律 ——
+★ 尤其是**第 1 条**：★ **断言必须能指出来源**（★ 本仓库最怕的不是「不够全」，而是「写得像事实、其实是推测」）。
