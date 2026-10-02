@@ -133,6 +133,19 @@ ModelContextProtocol.GenerateClientConfig All
 ```
 ★ 另有 `continuous_compilation_enabled` 设置 ⇒ **可开「存盘即自动编译」**。
 
+### ★★ 2.2·补、★ 启动前必做：**先确认没有别的 UE 进程在跑**
+
+★★ **实测踩过**：在已有编辑器在跑时又启一个 ⇒ **两进程争用同一份工程** ⇒
+**双双崩溃 + 日志互相覆盖** ⇒ ★ **诊断跑偏**。
+
+```
+① 查 tasklist | grep UnrealEditor
+② 停 tasklist 有 ⇒ taskkill /PID <pid> /F，等待真的退出
+③ 启 确认进程数为 0 再启  ★ 启动后进程数必须恰好是 1
+```
+
+★ 完整说明与命令 → `references/01-compile-and-launch.md` §6
+
 **B. 改反射（动 `.h`）—— 必须重启**
 ```
 1) 停编辑器
