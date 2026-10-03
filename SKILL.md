@@ -349,6 +349,7 @@ get_target_umg_asset  →  set_target_umg_asset  →  get_widget_tree
 | `scripts/find-ue-editor-info.sh` | ★ 一键收集：引擎路径 · 端口 · 进程 · 日志里的 Live Coding 状态 |
 | ★★ `references/05-official-mcp-and-toolsets.md` | ★★ **官方 MCP 与工具集**：启用方法 · 50 个工具集清单 · ★ **Tool Search 三件套** · ★ 客户端配置生成 · ★ **限制与坑** · ★ 官方 vs 第三方怎么选 |
 | ★★ `references/06-sampling-test-report.md` | ★★ **抽样实测报告**：5/5 全通 · ★ 官方工具的真实能力与返回结构 · ★ **写入路径的三步走** · 实测方法可复跑 |
+| ★★ `references/07-crash-bisection-headless.md` | ★★ **崩溃变异体二分**：零编译定位渲染期崩溃（delete vs Collapsed 判据）· headless UE Python 四坑（stdout 不落盘 · WidgetTree protected · JSON 字符串 · save_asset）· 台账纪律 · 何时升级编译验证 |
 
 ★ **通用性说明**：★ 本手册**不含任何具体项目路径与卡号**；★ 凡涉及「本机值」的地方
 都改成了「**怎么查**」的判据，★ 换项目/换机器照样成立。
