@@ -361,7 +361,7 @@ get_target_umg_asset  →  set_target_umg_asset  →  get_widget_tree
 
 | 篇 | 内容 |
 |---|---|
-| `references/01-compile-and-launch.md` | ★ 引擎定位 · 无 Launcher 的直启 · 编译方式决策 · Live Coding 快捷键出处 · 加载完成判据 |
+| `references/01-compile-and-launch.md` | ★ 引擎定位 · 无 Launcher 的直启 · 编译方式决策 · Live Coding 快捷键出处 · 加载完成判据 · ★★ **别把常驻 GUI 程序放进后台任务**（★ 「任务一直运行中」其实啥也没干） |
 | `references/02-editor-mcp-channel.md` | ★ 三层结构 · 端口发现 · 连接检查清单 · 常见连不上的原因树 · ★★ **握手有会话态（`initialize` 回 200 ≠ 握手成功）** · ★ 分层判据探针 |
 | `references/03-umg-and-assets.md` | ★ WBP 零逻辑架构 · 绑定写法 · ★ 落盘根因与修法 · ★★ **headless 批处理改几十个控件** · ★★ **写完必须读回来** |
 | `references/04-avoiding-pitfalls.md` | ★ 「查不到≠不存在」三例 · 编译错误分类 · 实例与通用的分界 · ★★★ **「调用返回成功」≠「做成了」** |
