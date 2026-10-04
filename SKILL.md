@@ -213,6 +213,25 @@ UE 编辑器（资产 / 关卡 / PIE / 日志）
 > ★ **「会不会监听」看 `netstat`，不看配置文件写了什么。**
 > ★ **「监听在哪」看对应插件的日志，不看文档、不看记忆。**
 
+### 3.5 ★★★ 端口通了≠ 通了；★ 「AI 侧看不到工具」通常是三件事之一
+
+★★ **这一节专治「假绿」** —— ★ 端口有应答就宣布「连上了」，是 MCP 排查里最常见的错判。
+
+| # | 现象 | ★ 真相 | ★ 怎么办 |
+|---|---|---|---|
+| 1 | ★ 握手第一步回 `200`，后面全 `400` | ★ ★ **握手有会话态**：★ 会话头由**响应头**下发，★ 每个后续请求都要回带 | ★ ★ **漏带就全被拒，而第一步照样 200** ⇒ 判据只能取「**真列出工具**」（→ `references/02` §4·5） |
+| 2 | ★ 工具列表里找不到要的 | ★ **只暴露 3 个元工具**（Tool Search 设计） | ★ 走「列工具集 → 描述 → 调用」三步（→ `references/05` §4） |
+| 3 | ★ 手写能调，客户端里就是没有 | ★ **客户端把空列表缓存了** | ★ 重连客户端；★ 或★ **用脚本自己握手**（`scripts/mcp-session-probe.py`） |
+
+★ **一条元纪律**：
+> ★ **「AI 调不到」≠「工具不存在」** —— ★ 中间隔着「代理设计」与「客户端缓存」两层。
+> ⇒ ★ **宣布「官方没这个能力」之前，先拿一份绕开客户端的独立证据。**
+
+★ **探针可直接跑**（★ 零依赖，★ 每条诊断都带「下一步该干什么」）：
+```bash
+python scripts/mcp-session-probe.py --expect-tools 3
+```
+
 ★ **官方通道的完整配置（生成命令 · 配置矩阵 · 排错树）→ `05-official-mcp-and-toolsets.md`**
 
 ## 4. ★★ UMG 界面：WBP 该放什么、不该放什么
@@ -343,11 +362,12 @@ get_target_umg_asset  →  set_target_umg_asset  →  get_widget_tree
 | 篇 | 内容 |
 |---|---|
 | `references/01-compile-and-launch.md` | ★ 引擎定位 · 无 Launcher 的直启 · 编译方式决策 · Live Coding 快捷键出处 · 加载完成判据 |
-| `references/02-editor-mcp-channel.md` | ★ 三层结构 · 端口发现 · 连接检查清单 · 常见连不上的原因树 |
-| `references/03-umg-and-assets.md` | ★ WBP 零逻辑架构 · 绑定写法 · ★ 落盘根因与修法 · 资产改名/新增的操作姿势 |
-| `references/04-avoiding-pitfalls.md` | ★ 「查不到≠不存在」三例 · 编译错误分类 · 实例与通用的分界 |
+| `references/02-editor-mcp-channel.md` | ★ 三层结构 · 端口发现 · 连接检查清单 · 常见连不上的原因树 · ★★ **握手有会话态（`initialize` 回 200 ≠ 握手成功）** · ★ 分层判据探针 |
+| `references/03-umg-and-assets.md` | ★ WBP 零逻辑架构 · 绑定写法 · ★ 落盘根因与修法 · ★★ **headless 批处理改几十个控件** · ★★ **写完必须读回来** |
+| `references/04-avoiding-pitfalls.md` | ★ 「查不到≠不存在」三例 · 编译错误分类 · 实例与通用的分界 · ★★★ **「调用返回成功」≠「做成了」** |
 | `scripts/find-ue-editor-info.sh` | ★ 一键收集：引擎路径 · 端口 · 进程 · 日志里的 Live Coding 状态 |
-| ★★ `references/05-official-mcp-and-toolsets.md` | ★★ **官方 MCP 与工具集**：启用方法 · 50 个工具集清单 · ★ **Tool Search 三件套** · ★ 客户端配置生成 · ★ **限制与坑** · ★ 官方 vs 第三方怎么选 |
+| ★★ `scripts/mcp-session-probe.py` | ★★ **官方通道分层健康探针**（零依赖）：★ 裸探 / 握手 / 会话头 / 工具列表四层 · ★ 每条诊断带「下一步」· ★ `--expect-tools` 可进门禁 |
+| ★★ `references/05-official-mcp-and-toolsets.md` | ★★ **官方 MCP 与工具集**：启用方法 · 50 个工具集清单 · ★ **Tool Search 三件套** · ★ **全限定名 / snake_case 三个名字陷阱** · ★ 客户端配置生成 · ★ **限制与坑** · ★ 官方 vs 第三方怎么选 |
 | ★★ `references/06-sampling-test-report.md` | ★★ **抽样实测报告**：5/5 全通 · ★ 官方工具的真实能力与返回结构 · ★ **写入路径的三步走** · 实测方法可复跑 |
 | ★★ `references/07-crash-bisection-headless.md` | ★★ **崩溃变异体二分**：零编译定位渲染期崩溃（delete vs Collapsed 判据）· headless UE Python 四坑（stdout 不落盘 · WidgetTree protected · JSON 字符串 · save_asset）· 台账纪律 · 何时升级编译验证 |
 
