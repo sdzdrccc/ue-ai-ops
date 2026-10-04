@@ -50,8 +50,14 @@ rm -f "$DEST"/references/*.md 2>/dev/null
 cp "$SRC"/references/*.md "$DEST/references/" 2>/dev/null
 
 echo "[3] 同步 scripts/ …"
-cp "$SRC"/scripts/*.sh "$DEST/scripts/" 2>/dev/null
-chmod +x "$DEST"/scripts/*.sh 2>/dev/null
+# ★★ 这里踩过一次真实的静默失效（★ 亲手犯的，值得留档）：
+#   初版写的是 `cp "$SRC"/scripts/*.sh` ⇒ ★ 新增一个 **.py** 脚本时被静默漏掉，
+#   ★ 而末尾的报告照样打印「scripts/ 3 个」⇒ ★ **看起来完全正常**。
+#   ⇒ 两处都得改：① 拷**全部**脚本（不限扩展名）；② 计数按**实际落地文件数**报。
+#   ★ 元教训：★ 「拷贝用了带白名单的通配符」+「报告只统计成功的那部分」= ★ 假绿配方。
+rm -f "$DEST"/scripts/* 2>/dev/null
+cp "$SRC"/scripts/* "$DEST/scripts/" 2>/dev/null
+chmod +x "$DEST"/scripts/* 2>/dev/null
 
 # ── 3. 记一份来源标记（★ 让「副本从哪来」可查）──
 cat > "$DEST/SYNC-ORIGIN.txt" <<EOF
@@ -65,9 +71,17 @@ EOF
 echo
 echo "[4] 结果"
 n_ref=$(ls -1 "$DEST"/references/*.md 2>/dev/null | wc -l | tr -d ' ')
+n_src_ref=$(ls -1 "$SRC"/references/*.md 2>/dev/null | wc -l | tr -d ' ')
+n_script=$(ls -1 "$DEST"/scripts/* 2>/dev/null | wc -l | tr -d ' ')
+n_src_script=$(ls -1 "$SRC"/scripts/* 2>/dev/null | wc -l | tr -d ' ')
 echo "    SKILL.md      $(wc -c < "$DEST/SKILL.md" | tr -d ' ') 字节"
-echo "    references/   $n_ref 篇"
-echo "    scripts/      $(ls -1 "$DEST"/scripts/*.sh 2>/dev/null | wc -l | tr -d ' ') 个"
+echo "    references/   $n_ref 篇（源 $n_src_ref）"
+echo "    scripts/      $n_script 个（源 $n_src_script）"
+# ★ 数量对不上 ⇒ ★ 同步不完整 ⇒ ★ 明确报出来，别让「少文件」静默过去
+if [ "$n_ref" != "$n_src_ref" ] || [ "$n_script" != "$n_src_script" ]; then
+    echo "    ★★ ★ 数量不一致 ⇒ 同步不完整（★ 别当成成功）"
+    exit 1
+fi
 echo
 echo "    ★ 提示：★ 下次要改内容，改【源仓库】再跑本脚本 —— 别直接改副本。"
 echo "============================================================"
