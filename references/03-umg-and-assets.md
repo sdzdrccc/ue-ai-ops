@@ -193,3 +193,72 @@ return success                                ← ★ 没标脏、没保存 ⇒ 
 | ★ **字体** | ★ 先用引擎默认，★ 留好换装口子 | ★ 字体资源常缺；★ **字号全部走常量**，换字体只改一处 |
 
 ★ **共同点**：★ **以上都能「先降级、后补齐」** ⇒ ★ 别在资源没到位时卡住不动。
+
+---
+
+## ★★★ 批量建控件树时的三条硬约束（★ 2026-10-06 实测 · 一次真实的两屏施工）
+
+> **场景**：用 `apply_layout` 一次性建 26~28 个控件的屏。★ 三条都是**「建完读回来」才发现的**
+> —— ★ **不读回就会交付一个「看着建好了、实际文字全空」的界面**。
+
+### ① ★★ **单内容槽控件放多个子 ⇒ 静默丢失**
+
+| 控件 | 槽位 | 后果 |
+|---|---|---|
+| ★ **`UButton`** | `Content` **单槽** | 放两个子 → ★ **只留第一个，其余静默消失**（★ 实测：「‹ 图标 ＋ 返回」丢了「返回」） |
+| ★ **`UBorder`** | `Content` **也是单槽** | ★ 同上（★ 实测：卡片里的「头像＋道号＋境界」三件丢了两件） |
+
+★ **正解**：这类控件有 >1 个子时**自己套一层容器**：
+- ★ `Button` ⇒ 套 **`HorizontalBox`**（典型是「图标 + 文字」横排）
+- ★ `Border` ⇒ 套 **`CanvasPanel`**（典型是卡片内**绝对定位**的元素）
+
+★ **判据**：★ **建完立刻 `get_widget_tree`，逐个数子控件** —— ★ 少一个都说明踩了这条。
+
+### ② ★★ `Slot.Offsets.Right / Bottom` 是**宽 / 高**，不是右下角坐标
+
+★ **实测**：写 `Offsets = {Left:-48, Top:-48, Right:432, Bottom:258}`（**以为是「右下角坐标」**）
+⇒ ★ **读回 `Size = (432, 258)`**，而目标宽高是 **480×306** ⇒ ★ **尺寸全错**。
+
+★ **正确语义**（`CanvasPanelSlot` · 单点锚时）：
+```
+Position = (Offsets.Left, Offsets.Top)      ← 相对锚点的偏移
+Size     = (Offsets.Right, Offsets.Bottom)  ← ★ 就是宽高，不是坐标
+```
+★ **交叉印证法**：★ **拿一个「已知尺寸」的既有资产反推** ——
+★ 找一个你**知道设计宽高**的控件（例如一张标注了宽度的卡片），看它的 `Offsets.Right`：
+★ 若那个数**恰好等于它的宽**（而不是「左边距 + 宽」），★ 就一秒确认了本条的语义。
+★ 这比读源码快，且**用的是你手上真实的数据**。
+
+★ **拉伸锚**（`Anchors.Minimum != Maximum`）时，`Offsets` 才是**四边距**（全 0 = 铺满）。
+
+### ③ ★★★ 控件要被 `BindWidget` 绑到，**必须勾 `Is Variable`**
+
+★ **实测**：`apply_layout` / `create_widget` 建出来的控件 **`bIsVariable` 默认 `false`**
+⇒ ★ **C++ 的 `BindWidgetOptional` 全部取到 `nullptr`**
+⇒ ★★ **界面表现：布局全在、但文字一个都没有**（提示条、标题、按钮文案全空）★ **且不报错**。
+
+★ **判据**：官方 MCP 的 `GetWidgets` 返回里每个控件都带 **`bIsVariable`** ⇒ ★ **逐个核**。
+★ **修法**：官方 `UMGToolSet.ToggleWidgetAsVariable`（★ 注意 `widget` 的 refPath 形如
+`/Game/UI/WBP_X.WBP_X:WidgetTree.<控件名>`）。
+
+★★ **这是「假绿」的典型**：★ 「控件建出来了」与「控件能被 C++ 用上」是**两件事**
+⇒ ★ 只看控件树会以为成功。
+
+---
+
+## ★★ 工具链两条通道的分工（★ 实测确认）
+
+| 通道 | 协议 | 端口 | 独有能力 |
+|---|---|---|---|
+| **项目内 UMG MCP 插件**（如 `UmgMcp`） | ★ **原生 socket**（★ **不是 HTTP** —— `curl` 连不上） | ★ **OS 随机**（★ 从日志读 `Assigned unique listener port`） | ★ `apply_layout`（**批量建树**）· `save_asset` |
+| **官方 `ModelContextProtocol`** | ★ **HTTP + SSE** | **8000**（`-ModelContextProtocolPort=N` 可改） | ★ **`set_parent`（设 WBP 父类）** · ★ **`ToggleWidgetAsVariable`** · `GetWidgets` · `CompileWidgetBlueprint` |
+
+★★ **关键**：★ **设父类与设变量只有官方通道有** ⇒ ★ **两条互补，不是二选一**。
+★ 新建的 WBP **父类默认是 `UserWidget`** ⇒ ★ 不设成自己的 C++ 屏类，`LoadClass` 会失败、
+★ 退回 C++ 基类 ⇒ ★ **WBP 白建**（能编译、能落盘、但运行时根本不用它）。
+
+★★ 官方通道是 **Tool Search 三件套**（`list_toolsets` / `describe_toolset` / `call_tool`）：
+- ★ `call_tool` 的字段名是 **`tool_name`**（★ **不是 `name`**）
+- ★ `tool_name` **不带 toolset 前缀**（`get_parent`），而 `describe_toolset` 返回的是**全限定名**
+  ⇒ ★ 要剥掉前缀
+- ★ 复杂参数**写进文件**用 `--args-file` —— ★ 在 shell 里手拼嵌套 JSON 会吃引号地狱
