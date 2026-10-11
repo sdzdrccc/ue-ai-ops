@@ -62,9 +62,9 @@
 |---|---|
 | ★ [`SKILL.md`](SKILL.md) | ★ **给 AI 读的主文件**（可直接装成 Agent skill） |
 | [`references/01`](references/01-compile-and-launch.md) | 找引擎 · 启动 · **编译方式决策表** · 热重载 · 怎么确认「真编过了」 · 实测记录 |
-| [`references/02`](references/02-editor-mcp-channel.md) | MCP 通道三层结构 · **端口怎么查** · 连不上的排查树 |
-| [`references/03`](references/03-umg-and-assets.md) | UMG 架构判据 · 绑定写法 · ★ **「改了不落盘」根因与修法** |
-| [`references/04`](references/04-avoiding-pitfalls.md) | ★★ **避坑总表**（含「假设的自我强化」与「查不到≠不存在」） |
+| [`references/02`](references/02-editor-mcp-channel.md) | MCP 通道三层结构 · **端口怎么查** · 连不上的排查树 · ★★ **「读回来」本身的两种失效（属性读回空 · 秒级往返采不到短事件）** |
+| [`references/03`](references/03-umg-and-assets.md) | UMG 架构判据 · 绑定写法 · ★ **「改了不落盘」根因与修法** · ★★ **导入外部模型：单位只能量、朝向只能拍、没动画就别装成完成** · ★ **无头 Python 的属性名先探测** |
+| [`references/04`](references/04-avoiding-pitfalls.md) | ★★ **避坑总表**（含「假设的自我强化」与「查不到≠不存在」· ★★ **「喂了输入却纹丝不动」= 引擎当帧清零** · ★ **注入要双向对账** · ★ **采样周期** · ★ **键在 PIE 里能不能到游戏** · ★★ **换控制方案＝换观测定义** · ★ **自动对齐的正反馈** · ★ **脚本自己造的假红**） |
 | [`references/05`](references/05-official-mcp-and-toolsets.md) | ★★ **官方 MCP 与 50 个工具集** · 启用 · 客户端配置 · 限制 |
 | [`references/06`](references/06-sampling-test-report.md) | ★ 抽样实测报告（5/5 全通 · 可复跑） |
 | [`scripts/find-ue-editor-info.sh`](scripts/find-ue-editor-info.sh) | ★ 一键收集：进程 / 端口 / 热重载状态 / 产物时间戳 |
