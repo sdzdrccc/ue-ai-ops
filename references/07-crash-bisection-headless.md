@@ -3,7 +3,7 @@
 > ★ 场景：`-game` / PIE 启动即崩（如渲染期 AV），静态检查（类型对表 · 结构 dump）已排除嫌疑，
 > 需要**零编译**找出「哪个控件/哪段代码」是必要条件。
 > ★ 实战案例：渲染期 `AV writing 0x0000000100000009` @ Prepass，7 轮收敛到
-> `EditableTextBox` + `SetWidgetStyle` 悬空样式指针（项目侧留有专文档）。
+> `EditableTextBox` + `SetWidgetStyle` 悬空样式指针（**判据见本文 §5** —— 引擎级，换个 UE 工程也算数）。
 
 ## 1. 核心思路：让「资产变异」当二分探针
 
@@ -78,3 +78,25 @@ tree = unreal.get_editor_subsystem(unreal.UmgGetSubsystem).get_widget_tree(bp)  
 ★ 搜索同类的姿势：拿**精确签名**去搜（`函数名 + 阶段 + 地址形态`，
 如 `SEditableTextBox DetermineFont Prepass writing`），命中率远高于泛搜
 「UE5 crash AV」——前者一击命中 Epic 论坛逐帧同款栈。
+
+## 5. 判据沉淀：`SetWidgetStyle` 悬空指针（**引擎级** · 换个工程也算数）
+
+> ★ 本节 2026-10-13 由**断点 D 审计**补入：此前这条判据只住在项目侧（`qiuyuan-dalu` 的
+> `docs/PITFALLS.md` A59），本文原只有一句「项目侧留有专文档」—— ★ 方向倒了：
+> 按 guild `AGENTS.md` §11.2「换个工程，这条还算数吗？」—— **算** ⇒ 判据归 `ue-ai-ops`。
+> ★ 分工：**判据在本文**（任何 UE 工程用得上）· **证据链在项目侧 A59**（那台机器的崩溃包与变异台账）。
+
+**API 事实**（引擎源码级 · UE 5.x 通用）：`UEditableTextBox::SetWidgetStyle(const FEditableTextBoxStyle& InStyle)`
+内部是 `MyEditableTextBlock->SetStyle(&InStyle)` —— ★ **存的是形参地址**；Slate 侧
+`SEditableTextBox` 用**裸指针长期持有**并衍生内部指针。⇒ **传局部/临时样式 = 留悬空指针**，
+崩在**首次渲染的 Prepass**（不是调用时）。
+
+**三层「都在骗人」（判据核心）**：
+1. **栈读不出函数名** —— 本机引擎无 PDB 时，`CallStack` 是一串「模块名 + 重复」，靠栈定位不可行；
+   ⇒ 改用**变异体二分**（本文 §1）定位。
+2. **`Collapsed` 的控件在 Prepass 被整支跳过** ⇒ 把控件藏起来**就不崩了** ——
+   ★ 「缩小影响面」极易被误当成「修好了」；判据：**修好的证据是崩溃包零新增 + 真机可见状态复现**，不是「不崩了」。
+3. **「崩溃前最后一行」≠「崩溃原因」** —— 日志末尾常是无关的资源加载（如字体），它只是**时间上的邻居**。
+
+**正确姿势**：样式对象必须是**比控件活得久的存储**（成员变量 / `TSharedPtr` 托管 / UObject 资产），
+**不许传局部拷贝或临时量**；同族 API（`SetStyle` 系列）一律按此判。
