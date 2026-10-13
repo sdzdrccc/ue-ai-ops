@@ -82,12 +82,42 @@ done
 echo
 
 # ── 判据② ·2：Markdown 表格列数 ──
+# ★★ 2026-10-13 改（★ 本脚本自身的一处"假绿"）：
+#   原实现是「**有 node 且存在 `scripts/check-md-tables.js` 就跑，否则打印"跳过"**」——
+#   ★★ 而那个 `.js` **从来不存在** ⇒ ★ 这条判据**永远在"跳过"**。
+#   ★ 判据：**★ "跳过"长得像绿灯** —— ★ 一个永远跳过的判据，比没有判据更坏
+#     （★ 它让人以为"表格有人管"）。
+#   ⇒ 处置：**用 awk 内联实现**（★ 顺带去掉了 node 依赖 —— 本仓其余检查都是 shell）。
+#   ★ 口径：**同一张表里每一行的 `|` 个数必须相同**（表头 / 分隔行 / 数据行一起比）。
+#     形如 `| a | b |` 与 `|---|---|` 与 `|:--|--:|` 的 `|` 数**都是 3** ⇒ 天然可比。
 echo "[3] Markdown 表格列数"
-if command -v node >/dev/null 2>&1 && [ -f "$ROOT/scripts/check-md-tables.js" ]; then
-    node "$ROOT/scripts/check-md-tables.js" "$ROOT" || FAILED=1
-else
-    echo "    · 跳过（无 node 或未装 check-md-tables.js）"
-fi
+tbl_bad=0
+while IFS= read -r f; do
+    # ★★ 两个坑（★ 都是**写完当场踩出来的**，都进了 `--selftest`）：
+    #   ① 单元格内容里的**转义竖线 `\|`** 不算列分隔符 —— ★ 不先去掉会**误报**
+    #      （★ 实测：本仓 `references/02` 与 `05` 各有一处这么写）。
+    #   ② 「首尾都有 `|`」才算表格行 —— ★ 非表格行要**结束当前表**，否则跨表串号。
+    bad=$(awk '
+        {
+            t = $0
+            gsub(/\\\|/, "", t)                    # ① 去掉转义竖线
+            if (t ~ /^\|.*\|[[:space:]]*$/) {      # ② 表格行
+                n = split(t, a, "|") - 2
+                if (!inblk) { hdr = n; inblk = 1; next }
+                if (n != hdr) print NR ": 列数 " n " != 表头 " hdr
+                next
+            }
+            inblk = 0
+        }
+    ' "$f" 2>/dev/null)
+    if [ -n "$bad" ]; then
+        echo "    ✗ ${f#$ROOT/}:"
+        echo "$bad" | head -3 | sed 's/^/        /'
+        tbl_bad=1
+        FAILED=1
+    fi
+done < <(find "$ROOT" -type f -name '*.md' -not -path '*/.git/*' 2>/dev/null)
+[ "$tbl_bad" -eq 0 ] && echo "    ✓ 表格列数一致"
 echo
 
 # ── 判据③：断言来源标注（★ 软提示，不失败）──
@@ -155,8 +185,42 @@ if [ "${1:-}" = "--selftest" ]; then
         FAILED=1
     fi
     echo
+
+    # ── 判据③（表格列数）的两条用例 —— ★★ 一正一反，缺一不可 ──
+    # ★ 为什么必须两条：★ 只测"坏表被拦" ⇒ 若判据把**所有表**都判坏，照样全过；
+    #   ★ 只测"好表通过" ⇒ 若判据**永远报绿**，也照样全过。
+    #   ⇒ ★ 两条一起，才证明它**分得清好坏**。
+    TBL="$ROOT/docs/evidence/_selftest.tbl.md"
+
+    # [D] 坏表：表头 2 列、数据行 3 列 ⇒ ★ 必报
+    printf '| A | B |\n|---|---|\n| 1 | 2 | 3 |\n' > "$TBL"
+    OUT_D="$(bash "$ROOT/scripts/check.sh" 2>&1 || true)"
+    echo "   [D] 塞入列数不一致的表 ⇒ 判据③ 应报错"
+    if echo "$OUT_D" | grep -q "列数 3 != 表头 2"; then
+        echo "       ✓ 已拦（符合预期）"
+    else
+        echo "       ✗ ★ 未拦 ⇒ 表格判据已失效！"
+        FAILED=1
+    fi
+
+    # [E] ★★ 好表：单元格里有**转义竖线 `\|`** ⇒ ★ **不得误报**
+    #   ★ 这条是**写完判据当场踩出来的坑**：`\|` 是表格里写竖线的规范写法，
+    #     而初版 awk 把它当成了列分隔符 ⇒ ★ 把本仓两张**好表**误判成坏表。
+    printf '| A | B |\n|---|---|\n| `a \\| b` | ok |\n' > "$TBL"
+    OUT_E="$(bash "$ROOT/scripts/check.sh" 2>&1 || true)"
+    echo "   [E] 塞入**带转义竖线**的好表 ⇒ ★ **不得误报**"
+    if echo "$OUT_E" | grep -q "表格列数一致"; then
+        echo "       ✓ 未误报（符合预期）"
+    else
+        echo "       ✗ ★ 误报了 ⇒ 判据把「转义竖线」当成了列分隔符！"
+        FAILED=1
+    fi
+
+    rm -f "$TBL"
+    echo
+
     if [ "$FAILED" -eq 0 ]; then
-        echo "   ★ 结论：三条反向用例全过 ⇒ ★ **判据真的在干活**"
+        echo "   ★ 结论：五条反向用例全过 ⇒ ★ **判据真的在干活**"
     else
         echo "   ★ 结论：★ **有反向用例未过 ⇒ 先修检查器，别信它的绿灯**"
     fi

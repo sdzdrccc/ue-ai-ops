@@ -53,14 +53,25 @@
 ## 4. 改完必须做的两件事（★ 顺序不能省）
 
 ```bash
-bash scripts/check.sh          # ① 通用性（不许有项目痕迹）+ ② 结构（关键文件 / 表格列数）
-bash scripts/sync-to-skill.sh  # ③ 同步到 skill 副本目录
+bash scripts/check.sh          # ① 通用性（不许有项目痕迹）+ ② 结构 + ③ 表格列数
+bash scripts/sync-to-skill.sh  # ④ 同步到 skill 副本目录
 ```
 
 | 步 | 它的性质 | 不做会怎样 |
 |---|---|---|
 | `check.sh` | ★ **门禁** | ★ 红了还推 ⇒ 项目痕迹**混进通用经验**（★ 换项目就失效） |
 | `sync-to-skill.sh` | ★ **发布动作** | ★ **只改源不同步 = AI 读到的还是旧版**（★ 等于没改） |
+
+### 4.1 ★★ 已装 git hook 兜底（★ **别再靠"记得"**）
+
+```bash
+bash scripts/install-hooks.sh   # → core.hooksPath = scripts/hooks ⇒ 每次 push 自动跑 check.sh
+```
+
+★★ **为什么补这个**（2026-10-13）：★ 本仓此前**无 CI、无 hook** ⇒ `check.sh`
+★ **只在"有人记得手动跑"时才存在**。★ 判据：**只在"有人记得手动跑"时才存在的门禁，等于没有门禁。**
+★ 机制与 `gbe-studio` / `gbe-assets` 两仓**同一套**（它们的 pre-push 校版本号）。
+★ 逃生舱：`UE_AIOPS_SKIP_CHECK=1 git push` —— ★ **用了它要在提交信息里写清原因**。
 
 ---
 
@@ -73,6 +84,7 @@ bash scripts/sync-to-skill.sh  # ③ 同步到 skill 副本目录
 - [ ] ★ 新篇**有理由**（现有篇装不下），★ 不是随手新开
 - [ ] `bash scripts/check.sh` **通过**
 - [ ] `bash scripts/sync-to-skill.sh` **已跑**（★ 只改源不同步 = 白改）
+- [ ] ★ **首次 clone 后跑过** `bash scripts/install-hooks.sh`（★ 启用 pre-push 兜底 —— §4.1）
 
 ---
 

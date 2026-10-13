@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+# ue-ai-ops pre-push 钩子 —— 推送前跑本仓门禁
+# ============================================
+# 由 `bash scripts/install-hooks.sh` 通过 `git config core.hooksPath scripts/hooks` 启用。
+#
+# ★ 为什么需要它（2026-10-13）：
+#   本仓有门禁 `scripts/check.sh`（通用性 + 结构 + 表格列数），
+#   ★★ 但**此前没有任何自动执行机制** —— 无 CI、无 git hook ⇒
+#   ★ 它**只在"有人记得手动跑"时才存在**。
+#   ★ 判据：**只在"有人记得手动跑"时才存在的门禁，等于没有门禁。**
+#   ★ 照 `gbe-*` 两仓的既有机制办（它们用同一套 `core.hooksPath`）。
+#
+# 逃生舱（仅限确知不需跑全查的场合，且应在提交信息里写清原因）：
+#   UE_AIOPS_SKIP_CHECK=1 git push
+
+if [ "${UE_AIOPS_SKIP_CHECK}" = "1" ]; then
+  echo "[pre-push] UE_AIOPS_SKIP_CHECK=1 —— 跳过本仓门禁"
+  exit 0
+fi
+
+if [ ! -f scripts/check.sh ]; then
+  echo "[pre-push] 警告：找不到 scripts/check.sh，跳过门禁。" >&2
+  echo "           请手动跑一次：bash scripts/check.sh" >&2
+  exit 0
+fi
+
+bash scripts/check.sh || {
+  echo "" >&2
+  echo "[pre-push] 推送被拦下：本仓门禁有红。" >&2
+  echo "           看上面的 ✗ 清单；修完再推。" >&2
+  echo "           确需放行：UE_AIOPS_SKIP_CHECK=1 git push" >&2
+  echo "" >&2
+  exit 1
+}

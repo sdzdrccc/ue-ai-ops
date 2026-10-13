@@ -63,8 +63,17 @@ echo "[3] 同步 scripts/ …"
 #   ★ 而末尾的报告照样打印「scripts/ 3 个」⇒ ★ **看起来完全正常**。
 #   ⇒ 两处都得改：① 拷**全部**脚本（不限扩展名）；② 计数按**实际落地文件数**报。
 #   ★ 元教训：★ 「拷贝用了带白名单的通配符」+「报告只统计成功的那部分」= ★ 假绿配方。
+# ★★ 2026-10-13：**同一条教训的第三次**（★ 新增 `scripts/hooks/`（**目录**）时又踩了，
+#   ★ 而且这次**两头同时坏**）：
+#     · `cp`（不带 `-r`）对目录报错，而 `2>/dev/null` 把它**吞掉**；
+#     · 计数 `ls -1 "$SRC"/scripts/*` ⇒ ★ 目录被**展开**、还多算一行表头 ⇒ **数出 8**（实际 5 个文件）
+#     ⇒ ★ 报告"数量不一致 ⇒ 同步不完整"，★ **而真正坏的是计数本身**。
+#   ⇒ 定稿：**拷与数都改用 `find … -maxdepth 1 -type f`** —— ★ 同源，不再各自漂移。
+#   ★ 另：`hooks/` **本就不该同步给 skill**（★ 它是仓的机制，不是"给 Agent 看的内容"）。
+#   ★★ 合起来的判据：★ **「拷什么」和「数什么」必须同源** ——
+#      ★ 否则它们会各自漂移，然后**互相指责**（这次的"同步不完整"就是这么来的）。
 rm -f "$DEST"/scripts/* 2>/dev/null
-cp "$SRC"/scripts/* "$DEST/scripts/" 2>/dev/null
+find "$SRC/scripts" -maxdepth 1 -type f -exec cp {} "$DEST/scripts/" \; 2>/dev/null
 chmod +x "$DEST"/scripts/* 2>/dev/null
 
 # ── 3. 记一份来源标记（★ 让「副本从哪来」可查）──
@@ -80,8 +89,9 @@ echo
 echo "[4] 结果"
 n_ref=$(ls -1 "$DEST"/references/*.md 2>/dev/null | wc -l | tr -d ' ')
 n_src_ref=$(ls -1 "$SRC"/references/*.md 2>/dev/null | wc -l | tr -d ' ')
-n_script=$(ls -1 "$DEST"/scripts/* 2>/dev/null | wc -l | tr -d ' ')
-n_src_script=$(ls -1 "$SRC"/scripts/* 2>/dev/null | wc -l | tr -d ' ')
+# ★ 计数与拷贝**同源**（都用 `find … -type f`）—— ★ 见上面第 ③ 条教训
+n_script=$(find "$DEST/scripts" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
+n_src_script=$(find "$SRC/scripts" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' ')
 echo "    AGENTS.md     $(wc -c < "$DEST/AGENTS.md" | tr -d ' ') 字节"
 echo "    SKILL.md      $(wc -c < "$DEST/SKILL.md" | tr -d ' ') 字节"
 echo "    references/   $n_ref 篇（源 $n_src_ref）"
