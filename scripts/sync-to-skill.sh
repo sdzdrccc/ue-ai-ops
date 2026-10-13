@@ -11,7 +11,9 @@
 #   bash scripts/sync-to-skill.sh /path/to/skills/ue-ai-ops   # 指定目标
 #
 # ★ 设计约束：
-#   · 只同步「该给 Agent 看的」内容（SKILL.md + references/ + scripts/）
+#   · 只同步「该给 Agent 看的」内容（**AGENTS.md** + SKILL.md + references/ + scripts/）
+#     ★ **AGENTS.md 必须在列**（2026-10-13 补）—— ★ 它的 §1 明写「改源、别改副本」，
+#       而那条判据**只有在副本里也有一份时才读得到**（★ 否则自相矛盾）。
 #   · ★ **不同步** docs/evidence/（那是给人查的证据，塞进 skill 会让上下文臃肿）
 #   · 同步前先跑 check.sh（★ 防止把带项目痕迹的内容发出去）
 
@@ -42,6 +44,12 @@ fi
 mkdir -p "$DEST/references" "$DEST/scripts"
 
 # ── 2. 同步（★ 只同步该给 Agent 的）──
+echo "[0] 同步 AGENTS.md …"
+# ★★ 2026-10-13 补：此前**不同步** AGENTS.md —— ★ 而它的 §1 明写
+#   「★ 若你手里是**同步副本**，改源、别改副本」⇒ ★ 那条判据**在副本里根本读不到** ⇒ **自相矛盾**。
+#   ★ 判据：**纪律文件必须跟着"会用到它的那份拷贝"走** —— ★ 只放在源仓 = 副本场景等于没写。
+cp "$SRC/AGENTS.md" "$DEST/AGENTS.md"
+
 echo "[1] 同步 SKILL.md …"
 cp "$SRC/SKILL.md" "$DEST/SKILL.md"
 
@@ -74,6 +82,7 @@ n_ref=$(ls -1 "$DEST"/references/*.md 2>/dev/null | wc -l | tr -d ' ')
 n_src_ref=$(ls -1 "$SRC"/references/*.md 2>/dev/null | wc -l | tr -d ' ')
 n_script=$(ls -1 "$DEST"/scripts/* 2>/dev/null | wc -l | tr -d ' ')
 n_src_script=$(ls -1 "$SRC"/scripts/* 2>/dev/null | wc -l | tr -d ' ')
+echo "    AGENTS.md     $(wc -c < "$DEST/AGENTS.md" | tr -d ' ') 字节"
 echo "    SKILL.md      $(wc -c < "$DEST/SKILL.md" | tr -d ' ') 字节"
 echo "    references/   $n_ref 篇（源 $n_src_ref）"
 echo "    scripts/      $n_script 个（源 $n_src_script）"
