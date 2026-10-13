@@ -1,0 +1,31 @@
+name: CI
+
+# ==============================================================
+#  ue-ai-ops CI —— check.sh 的「别的机器 / 别的克隆」层
+#
+#  WHY（2026-10-13 · X-0044）：
+#    本仓 X-0039 遗留写着「无版本门禁 / 无 CI / 无 git hook」——hook 已由 X-0040 补上
+#    （pre-push 跑 check.sh）；本文件补 CI：push / PR 即验，不依赖本地是否装过 hook。
+#  ★ check.sh 完全自足（find/awk/grep，零外部依赖、零网络）⇒ CI 上无需任何额外步骤。
+# ==============================================================
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    name: check.sh ＋ 反向自测
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: self-check (判据①②③)
+        run: bash scripts/check.sh
+
+      # ★ 反向用例（五条）：「没失败过的检查器 = 未被验证过的检查器」——
+      #   判据真的能拦，才算数（X-0040 立：假绿比没门禁更坏）。
+      - name: reverse tests (--selftest)
+        run: bash scripts/check.sh --selftest
