@@ -376,3 +376,80 @@ const FBoxSphereBounds Fit = Body->CalcBounds(Body->GetComponentTransform());
    ★ **目标资产 / 目录在不在、包围盒读数对不对**，★ 不看「跑完了没报错」。
 
 ★ ★ **这一条与本文 §3·5·2「写完必须读回来」、`04 §4·8`「调用返回成功 ≠ 做成了」是同一条纪律的三个化身。**
+
+## ★★★ `CanvasPanelSlot` 的"位置/尺寸"**不看锚点**（★ 读引擎源码定的，不是推导）
+
+★ 场景：脚本化投递 UMG 布局时，想知道"读回来的 `Position`/`Size` 到底是不是屏幕上那块矩形"。
+
+★ 源码（`Runtime/UMG/Private/Components/CanvasPanelSlot.cpp`）：
+
+| 函数 | 实际做的事 |
+|---|---|
+| `SetPosition(X,Y)` | `Offsets.Left = X; Offsets.Top = Y` —— ★ 原样写 |
+| `SetSize(X,Y)` | `Offsets.Right = X; Offsets.Bottom = Y` —— ★ 原样写 |
+| `GetSize()` | `return (Offsets.Right, Offsets.Bottom)` —— ★ 原样读 |
+| `GetPosition()` | `return (Offsets.Left, Offsets.Top)` |
+
+★★ **结论**：这四个访问器**完全不看 `Anchors`**。所以
+
+· 单点锚下 `(Right,Bottom)` 语义 = 宽高；★ 拉伸锚下 = 离父右/下边的**边距** —— ★ 语义随锚变，
+· 但**数值层面它就是那两个字段本身** ⇒ ★ 拿"读回的 Position/Size"去对"写入的 Offsets"，
+  ★ **两种锚都成立**，★ 不需要为拉伸锚开例外。
+· ⇒ 判据：**写校验脚本时别因为"语义不同"就跳过一类控件**（★ 跳过的那一类正是漏检的那一类）。
+  ★ 要跳过也得说清"跳过的同时漏掉了什么"，★ 并给这一类补一条**反向用例**。
+
+★ 顺带：`SetLayout(FAnchorData)` 是**整包替换**（Offsets + Anchors + Alignment 一起），
+★ 而 `SetPosition/SetSize` 只动 Offsets ⇒ ★ 增量"只补几何"的工具**不会补锚点** ——
+★ 新建的拉伸锚件会停在默认 `(0,0,0,0)`，★ 于是"铺满父件"。⇒ ★ 补几何必须连锚点一起补。
+
+---
+
+## ★★★ `UButton` 的灰底：幽灵样式配方（★ 两个 API 名坑 + 一条"透明不等于不画"）
+
+★ 症状：画稿里"只有文字"的按钮（页签、返回、链接式入口），实机全部画成**灰色圆角块**。
+★ 根因：`UButton` 的 `Style` 默认值 = 引擎核心样式的 `Button` ⇒ ★ **不显式改就有底板**。
+
+★★ 配方（★ 三处都是踩过才写下来的）：
+
+```cpp
+static const FButtonStyle& Ghost()
+{
+    static const FButtonStyle S = [] {
+        FButtonStyle T;
+        // ① 字段名是 **DrawAs**，★ 没有叫 DrawType 的字段（`GetDrawType()` 只是访问器）
+        T.Normal.DrawAs   = ESlateBrushDrawType::NoDrawType;
+        T.Hovered.DrawAs  = ESlateBrushDrawType::NoDrawType;
+        T.Pressed.DrawAs  = ESlateBrushDrawType::NoDrawType;
+        T.Disabled.DrawAs = ESlateBrushDrawType::NoDrawType;
+        T.NormalPadding = FMargin(0.f);      // ③ 不清 ⇒ 文字整体偏移，★ 而读回 slot 几何看不见这个偏移
+        T.PressedPadding = FMargin(0.f);
+        return T;
+    }();
+    return S;
+}
+Btn->SetStyle(Ghost());   // ② UE 5.2 起 `SetStyle(const FButtonStyle&)` 收【引用】，★ 传指针编译不过
+```
+
+1. ★ **只把 `TintColor` 调透明不够** —— `DrawAs` 仍是 `Image` 时，空 Brush 画的是**纯色填充**
+   （★ 本篇前面那节「空 Brush 的 `UImage` 会画成一块纯色」是同一条）。★ 必须 `NoDrawType`。
+2. ★ `SetStyle` 5.2 起收**引用**（内部会拷贝）⇒ 样式对象**不必**活得比按钮久；
+   ★ 但别的文本类控件的 `SetStyle` 有收**指针**的分支 ⇒ ★ 别照抄，★ 看那个类自己的头文件。
+3. ★ 默认样式带 `NormalPadding` ⇒ 抹了灰底**文字还会偏移**；★ 而"读回的 slot 位置"是对的，
+   ★ 所以这种偏移**只有像素能发现**。
+
+---
+
+## ★★★ UMG 的**树序就是 z 序**：装饰件排在交互件后面 = 盖住它并**吃掉点击**，★ 且日志零线索
+
+★ 症状：按钮点了**毫无反应** —— 注入返回 `true`、画面不变、**日志里一个字都没有**。
+★ 根因：`CanvasPanel` 在同一 `ZOrder` 下**按子节点顺序绘制**，★ 后建的画在上面；
+★ 而 `UImage` / `UBorder` 默认 `Visible` ⇒ ★ **参与命中测试**。
+⇒ 一块"给按钮当底板"的 Border 若排在按钮**之后**，★ 它就把按钮整块盖住，★ 点的全是底板。
+
+★★ 两条对策（★ 一起做才稳）：
+1. **顺序**：衬托某交互件的装饰件，★ 必须排在它**之前**；★ 并在生成表里注明"这条顺序有含义"，
+   ★ 否则下一个加件的人只会按 DOM/清单顺序往下追加。
+2. **命中**：装饰件设 `ESlateVisibility::HitTestInvisible` —— ★ 只靠顺序是脆的（★ 谁再插一条就复活）。
+
+★ 判据：**"点了没反应"要拿日志证伪，不能拿事件注入的返回值作证** ——
+★ 后者只代表"事件送进去了"，★ 不代表"送对了控件"。★ 本条正是靠"日志里没有预期那一行"定位的。
