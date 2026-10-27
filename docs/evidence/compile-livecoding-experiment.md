@@ -86,7 +86,7 @@
 
 ```
 1) 停编辑器：taskkill /PID <pid> /F
-2) 编译：Build.bat QiuyuanDaluEditor Win64 Development -Project=<uproject> -WaitMutex
+2) 编译：Build.bat <Project>Editor Win64 Development -Project=<uproject> -WaitMutex
 3) 重开：UnrealEditor.exe <uproject> -ModelContextProtocolStartServer
    ★ 启动参数 -ModelContextProtocolStartServer 不能省，否则 MCP 通道不起
    ★ 约 150 秒才加载完（着色器）
@@ -110,7 +110,7 @@
 
 ```bash
 # ① Live Coding 是否已启动
-grep "LogLiveCoding" ue-client/Saved/Logs/QiuyuanDalu.log | tail -5
+grep "LogLiveCoding" <project>/Saved/Logs/<Project>.log | tail -5
 
 # ② 快捷键的权威出处（引擎硬编码）
 grep -n "0x37A" "<EngineRoot>/Engine/Source/Developer/Windows/LiveCodingServer/Private/External/LC_AppSettings.cpp"

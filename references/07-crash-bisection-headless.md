@@ -58,7 +58,7 @@ timeout 100 "<引擎Binaries>/UnrealEditor-Cmd.exe" \
 
 ## 3. 变异脚本模板
 
-项目侧已沉淀：`qiuyuan-dalu/tools/edit-wbp.py`（MODE=delete/collapse + 复核树）、
+项目侧已沉淀：`tools/edit-wbp.py`（MODE=delete/collapse + 复核树）、
 `tools/dump-wbp-tree.py`（树 dump + 重名检查）。要点：
 
 ```python
@@ -81,10 +81,10 @@ tree = unreal.get_editor_subsystem(unreal.UmgGetSubsystem).get_widget_tree(bp)  
 
 ## 5. 判据沉淀：`SetWidgetStyle` 悬空指针（**引擎级** · 换个工程也算数）
 
-> ★ 本节 2026-10-13 由**断点 D 审计**补入：此前这条判据只住在项目侧（`qiuyuan-dalu` 的
-> `docs/PITFALLS.md` A59），本文原只有一句「项目侧留有专文档」—— ★ 方向倒了：
-> 按 guild `AGENTS.md` §11.2「换个工程，这条还算数吗？」—— **算** ⇒ 判据归 `ue-ai-ops`。
-> ★ 分工：**判据在本文**（任何 UE 工程用得上）· **证据链在项目侧 A59**（那台机器的崩溃包与变异台账）。
+> ★ 本节 2026-10-13 由**断点 D 审计**补入：此前这条判据只住在项目侧（项目
+> `docs/PITFALLS.md` 的坑号），本文原只有一句「项目侧留有专文档」—— ★ 方向倒了：
+> 按上游「换个工程，这条还算数吗？」—— **算** ⇒ 判据归 `ue-ai-ops`。
+> ★ 分工：**判据在本文**（任何 UE 工程用得上）· **证据链在项目侧**（那台机器的崩溃包与变异台账）。
 
 **API 事实**（引擎源码级 · UE 5.x 通用）：`UEditableTextBox::SetWidgetStyle(const FEditableTextBoxStyle& InStyle)`
 内部是 `MyEditableTextBlock->SetStyle(&InStyle)` —— ★ **存的是形参地址**；Slate 侧

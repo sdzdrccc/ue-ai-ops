@@ -46,7 +46,9 @@ scan_all() {
                 echo "    ✗ 发现$label:"
                 found=1
             fi
-            grep -nE "$pat" "$f" 2>/dev/null | head -3 | sed "s|^|        ${f#$ROOT/}:|" | cut -c1-120
+            # ★ 不截断：`head -3` 会让同一文件里的第 4 条起**静默消失**
+            #   （2026-10-27 自测实测：项目名判据明明命中，却被前三条挤掉了）
+            grep -nE "$pat" "$f" 2>/dev/null | sed "s|^|        ${f#$ROOT/}:|" | cut -c1-120
         fi
     done < <(find "$ROOT" -type f \( -name '*.md' -o -name '*.sh' -o -name '*.txt' -o -name 'LICENSE' \) 2>/dev/null)
     [ "$found" -eq 1 ] && FAILED=1
@@ -57,7 +59,11 @@ scan_all() {
 scan_all "[A-Za-z]:[\\/][^/\\ ]" "盘符路径"
 
 # ★ 记录卡号：指向私有仓，对读者是死链接
-scan_all "\b[T-X]-00[0-9]{2}\b|ADR-00[0-9]{2}" "记录卡号"
+# ★ 2026-10-27 补 `A**`：坑号也是项目侧编号（实测 `A59` 曾漏在模式外被放行）
+scan_all "\b[T-X]-00[0-9]{2}\b|ADR-00[0-9]{2}|\bA[0-9]{2}\b" "记录卡号"
+
+# ★ 项目名痕迹（2026-10-27 补 · 上游 `X-0053` U-1.2）：通用仓不许出现具体项目名
+scan_all "\b(qiuyuan|Qiuyuan|dalu|Dalu|ue-client)\b" "项目名痕迹"
 
 # ★ 本机特有端口（★ 8000 不算 —— 它是官方默认值，属通用）
 scan_all "\b(64892|50664|3306|6379)\b" "本机特有端口"
@@ -70,6 +76,7 @@ echo
 echo "[2] 结构"
 for f in SKILL.md README.md INSTALL.md references/01-compile-and-launch.md \
          references/04-avoiding-pitfalls.md references/05-official-mcp-and-toolsets.md \
+         references/07-crash-bisection-headless.md \
          scripts/find-ue-editor-info.sh scripts/sync-to-skill.sh \
          scripts/mcp-session-probe.py; do
     if [ -f "$ROOT/$f" ]; then
@@ -154,7 +161,7 @@ if [ "${1:-}" = "--selftest" ]; then
     # ★ 用例放在 docs/evidence/ —— ★ 这正是初版漏扫的目录，用它才能测出范围问题
     TMP="$ROOT/docs/evidence/_selftest.tmp.md"
     # ★ 用例必须**符合判据的真实形状**：T-00xx（不是 T-9999）
-    printf '# selftest\n\nF:/some/fake/path\nT-0099\n' > "$TMP"
+    printf '# selftest\n\nF:/some/fake/path\nT-0099\nA59\nqiuyuan-dalu\n' > "$TMP"
 
     OUT_A="$(bash "$ROOT/scripts/check.sh" 2>&1 || true)"
 
@@ -171,6 +178,22 @@ if [ "${1:-}" = "--selftest" ]; then
         echo "       ✓ 已拦（符合预期）"
     else
         echo "       ✗ ★ 未拦 ⇒ 卡号判据已失效！"
+        FAILED=1
+    fi
+
+    echo "   [B2] 塞入坑号 A59 ⇒ 判据① 应报错"
+    if echo "$OUT_A" | grep -q "✗ 发现记录卡号"; then
+        echo "       ✓ 已拦（符合预期）"
+    else
+        echo "       ✗ ★ 未拦 ⇒ 坑号（A**）仍在模式外！"
+        FAILED=1
+    fi
+
+    echo "   [B3] 塞入项目名 qiuyuan-dalu ⇒ 判据① 应报错"
+    if echo "$OUT_A" | grep -q "✗ 发现项目名痕迹"; then
+        echo "       ✓ 已拦（符合预期）"
+    else
+        echo "       ✗ ★ 未拦 ⇒ 项目名判据已失效！"
         FAILED=1
     fi
 
@@ -220,7 +243,7 @@ if [ "${1:-}" = "--selftest" ]; then
     echo
 
     if [ "$FAILED" -eq 0 ]; then
-        echo "   ★ 结论：五条反向用例全过 ⇒ ★ **判据真的在干活**"
+        echo "   ★ 结论：七条反向用例全过 ⇒ ★ **判据真的在干活**"
     else
         echo "   ★ 结论：★ **有反向用例未过 ⇒ 先修检查器，别信它的绿灯**"
     fi

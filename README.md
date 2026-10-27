@@ -67,6 +67,7 @@
 | [`references/04`](references/04-avoiding-pitfalls.md) | ★★ **避坑总表**（含「假设的自我强化」与「查不到≠不存在」· ★★ **「喂了输入却纹丝不动」= 引擎当帧清零** · ★ **注入要双向对账** · ★ **采样周期** · ★ **键在 PIE 里能不能到游戏** · ★★ **换控制方案＝换观测定义** · ★ **自动对齐的正反馈** · ★ **脚本自己造的假红**） |
 | [`references/05`](references/05-official-mcp-and-toolsets.md) | ★★ **官方 MCP 与 50 个工具集** · 启用 · 客户端配置 · 限制 |
 | [`references/06`](references/06-sampling-test-report.md) | ★ 抽样实测报告（5/5 全通 · 可复跑） |
+| [`references/07`](references/07-crash-bisection-headless.md) | ★★ **崩溃变异体二分**：零编译定位渲染期崩溃 · headless UE Python 四坑 · `SetWidgetStyle` 悬空指针判据 |
 | [`scripts/find-ue-editor-info.sh`](scripts/find-ue-editor-info.sh) | ★ 一键收集：进程 / 端口 / 热重载状态 / 产物时间戳 |
 | [`docs/evidence/`](docs/evidence/) | ★ **原始证据**（实测记录 + 可复跑命令）—— 与 `references/` 有意重叠，便于追溯 |
 
