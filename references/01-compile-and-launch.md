@@ -283,3 +283,72 @@ sleep 3 && tasklist | grep -ci UnrealEditor   # ★ 等它真的退出
 ★★ **元纪律（★ 这条的真正价值）**：
 > ★ **AI 自己起的进程，要对它的「生命周期表现」负责** ——
 > ★ 让用户面对一条永久转圈的提示却不知道为什么，★ 是**遗留了沟通成本**，★ 不是「运行正常」。
+
+---
+
+## 8. ★★ 编辑器外的两条脚本通道（★ 与编辑器互斥）
+
+> ★ 什么时候翻这节：★ **要跑一次性的批处理**（改资产 / 导数据 / 量东西），★ 而不是在编辑器里点。
+
+### 8·1 ★ `-ExecutePythonScript`：跑完编辑器自己退出
+
+★ **实测行为**：带这个开关启动 ⇒ 脚本跑完 **编辑器自己退出**（不是留在那儿）。
+★ **想让它留着**：`unreal.EditorPythonScripting.set_keep_python_script_alive(True)` ——
+★ **类名是 `EditorPythonScripting`**（★ 不是 `EditorPythonScriptingLibrary`，猜错直接 AttributeError）。
+
+★★ **代价（★ 比"留着"这个好处重要）**：那个「正在执行 Python 脚本」的**异步任务通知**，
+★ 只在执行器**请求退出**时才销毁 ⇒ ★ 开了 keep-alive 它就会**一直挂着**；
+★ 而框上的「取消」**等于关编辑器**（不是取消脚本）。
+
+★ **判据**：
+1. ★ **要留就接受"一条常驻提示"**，并**提前告诉用户它是什么、怎么才会消失** ——
+   ★ 否则对方会以为脚本卡住了（同 §7 的元纪律）；
+2. ★ **一次性任务优先让它自己退出**（不设 keep-alive），★ 不留尾巴。
+
+### 8·2 ★★ `-run=pythonscript`：commandlet 形态
+
+```bash
+<引擎>/Engine/Binaries/Win64/UnrealEditor-Cmd.exe "<工程>.uproject" \
+  -run=pythonscript -script="<脚本>.py" -unattended -nosplash -nullrhi
+```
+
+★★ **与编辑器互斥**：★ **编辑器开着时跑必失败**（工程被锁）⇒
+★ 先按 §6 确认进程数为 0 → 跑 → 跑完再起编辑器。
+
+★★ **日志只认 `log_warning`**：commandlet 下 `unreal.log()` **不进日志**，
+★ 只有 `unreal.log_warning()` / `unreal.log_error()` 进。
+⇒ ★ **探针脚本一律用 warning**，否则整轮"跑成功了，但什么都看不到"（★ 症状与 §4·8 的静默失败同族）。
+
+### 8·3 ★★ 编译卡死：判据是**产物时间戳**，不是「命令还没返回」
+
+★ **实测**：`Build.bat` 偶发卡死在**一个编译单元**上 —— `cl.exe` 吃约 1GB 内存、
+★ 十几分钟不动、日志一行不推进。
+
+★ **处置**（★ 顺序固定）：
+```bash
+cmd //c "taskkill /IM cl.exe /F"     # 杀编译进程
+cmd //c "taskkill /IM dotnet.exe /F" # 杀 UBT（它等 cl，会一起僵着）
+# 然后原命令重跑一次 ⇒ 实测即过
+```
+★★ **判据**：**看 DLL / 可执行产物的 mtime 有没有变** ——
+★ 变了 ⇒ 在推进（再等等）；★ 没变 ⇒ 已经僵死（别等）。
+★ **"命令没返回"什么都不能证明**（同 §4·17：后台任务状态也不是判据）。
+
+### 8·4 ★ 热重载怎么触发：**快捷键注入不生效**
+
+★ `LiveCoding.Compile` / `LiveCoding.CompileSync` 是**存在的控制台命令**。
+★ 但 `PressKey("Ctrl+Alt+F11")` **打不上** —— ★ 热键由**外部 `LiveCodingConsole` 进程**注册，
+★ Slate 层注入不触发它。
+
+★ **两条可行路**：① 打开编辑器控制台敲 `LiveCoding.Compile`；② 关编辑器走命令行全量编译（§3.3）。
+★ **来源**：实测（注入回执正常、编译没发生，改用控制台命令后当场生效）。
+
+### 8·5 ★ 在 Git Bash 里驱动这些命令的两个坑
+
+| 坑 | 症状 | 正解 |
+|---|---|---|
+| ★ `taskkill /IM xxx` 的参数被当**路径**做转义 | 报「无效参数 '<git 安装目录>/IM'」 | ★ 套一层：`cmd //c "taskkill /IM xxx /F"` |
+| ★ `/tmp` 与 Windows 工具**不互通** | Git Bash 的 `/tmp` 实际映射到 Windows 的 `%LOCALAPPDATA%\Temp` ⇒ 脚本写 `/tmp/x.json` 后，下一个工具按自己的路径找不到 | ★ **跨工具传文件一律写明确的 Windows 路径**（别用 `/tmp`） |
+
+★ **元判据**：★ **在 Git Bash 里调 Windows 原生程序，凡是"路径样式"的参数都要怀疑一次** ——
+★ `/IM`、`/F`、`/PID` 这类开关长得像路径，就会被 MSYS 的路径转换改掉。

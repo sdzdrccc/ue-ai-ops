@@ -61,13 +61,14 @@
 | 文件 | 内容 |
 |---|---|
 | ★ [`SKILL.md`](SKILL.md) | ★ **给 AI 读的主文件**（可直接装成 Agent skill） |
-| [`references/01`](references/01-compile-and-launch.md) | 找引擎 · 启动 · **编译方式决策表** · 热重载 · 怎么确认「真编过了」 · 实测记录 |
+| [`references/01`](references/01-compile-and-launch.md) | 找引擎 · 启动 · **编译方式决策表** · 热重载 · 怎么确认「真编过了」 · ★ **编辑器外的两条脚本通道** · ★ **编译卡死看产物时间戳** · 实测记录 |
 | [`references/02`](references/02-editor-mcp-channel.md) | MCP 通道三层结构 · **端口怎么查** · 连不上的排查树 · ★★ **「读回来」本身的两种失效（属性读回空 · 秒级往返采不到短事件）** |
-| [`references/03`](references/03-umg-and-assets.md) | UMG 架构判据 · 绑定写法 · ★ **「改了不落盘」根因与修法** · ★★ **导入外部模型：单位只能量、朝向只能拍、没动画就别装成完成** · ★ **无头 Python 的属性名先探测** |
-| [`references/04`](references/04-avoiding-pitfalls.md) | ★★ **避坑总表**（含「假设的自我强化」与「查不到≠不存在」· ★★ **「喂了输入却纹丝不动」= 引擎当帧清零** · ★ **注入要双向对账** · ★ **采样周期** · ★ **键在 PIE 里能不能到游戏** · ★★ **换控制方案＝换观测定义** · ★ **自动对齐的正反馈** · ★ **脚本自己造的假红** · ★ **同进程「删净重建」不清旧树（§4·21）** · ★ **play session 期间改资产（§4·22）**） |
-| [`references/05`](references/05-official-mcp-and-toolsets.md) | ★★ **官方 MCP 与 50 个工具集** · 启用 · 客户端配置 · 限制 |
+| [`references/03`](references/03-umg-and-assets.md) | UMG 架构判据 · 绑定写法 · ★ **「改了不落盘」根因与修法** · ★★ **导入外部模型：单位只能量、朝向只能拍、没动画就别装成完成** · ★ **无头 Python 的属性名先探测** · ★★★ **批量投递三条假成功** · ★★ **跨工程拷资产包保 `/Game/` 路径** · ★★ **UI 跨分辨率判据** |
+| [`references/04`](references/04-avoiding-pitfalls.md) | ★★ **避坑总表**（含「假设的自我强化」与「查不到≠不存在」· ★★ **「喂了输入却纹丝不动」= 引擎当帧清零** · ★ **注入要双向对账** · ★ **采样周期** · ★ **键在 PIE 里能不能到游戏** · ★★ **换控制方案＝换观测定义** · ★ **自动对齐的正反馈** · ★ **脚本自己造的假红** · ★ **同进程「删净重建」不清旧树（§4·21）** · ★ **play session 期间改资产（§4·22）** · ★★ **按标签寻件跨屏抢（§4·23）** · ★ **窗口最小化让 Slate 与截图一起瞎（§4·24）** · ★★★ **注入按键到不了游戏 ⇒ 真人按（§4·25）** · ★★★ **焦点悬空 ⇒ 只有键盘死（§4·26）** · ★★ **光照分「总量」与「光比」（§4·27）**） |
+| [`references/05`](references/05-official-mcp-and-toolsets.md) | ★★ **官方 MCP 与 50 个工具集** · 启用 · 客户端配置 · 限制 · ★★★ **实测能力边界（改不了组件属性 / 无导出 / 建 LevelSequence 卡死 / 改不了动画状态机）** · ★★ **Python Remote Execution 协议** |
 | [`references/06`](references/06-sampling-test-report.md) | ★ 抽样实测报告（5/5 全通 · 可复跑） |
 | [`references/07`](references/07-crash-bisection-headless.md) | ★★ **崩溃变异体二分**：零编译定位渲染期崩溃 · headless UE Python 四坑 · `SetWidgetStyle` 悬空指针判据 |
+| [`references/08`](references/08-animation-and-retargeting.md) | ★★ **动画资产与跨骨架重定向**：骨架判据 · 动作库四条约定 · **IK Retargeter 全流程脚本化** · 分步改每步重评估 · 抄姿态＋两段 IK＋可达性 · Python 改关键帧 · 单节点动画退路 · Blender 骨骼朝向坑 |
 | [`scripts/find-ue-editor-info.sh`](scripts/find-ue-editor-info.sh) | ★ 一键收集：进程 / 端口 / 热重载状态 / 产物时间戳 |
 | [`docs/evidence/`](docs/evidence/) | ★ **原始证据**（实测记录 + 可复跑命令）—— 与 `references/` 有意重叠，便于追溯 |
 

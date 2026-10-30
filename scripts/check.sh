@@ -76,7 +76,7 @@ echo
 echo "[2] 结构"
 for f in SKILL.md README.md INSTALL.md references/01-compile-and-launch.md \
          references/04-avoiding-pitfalls.md references/05-official-mcp-and-toolsets.md \
-         references/07-crash-bisection-headless.md \
+         references/07-crash-bisection-headless.md references/08-animation-and-retargeting.md \
          scripts/find-ue-editor-info.sh scripts/sync-to-skill.sh \
          scripts/mcp-session-probe.py; do
     if [ -f "$ROOT/$f" ]; then
