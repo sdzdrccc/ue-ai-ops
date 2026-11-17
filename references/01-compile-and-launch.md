@@ -142,12 +142,20 @@ grep -c "\[.*\] Compile" build.log
 # ② 改一个头之前，先数它被谁 include —— ★ 这个数就是「改它要重编的量」
 grep -rl "<头文件名>" --include=*.cpp . | wc -l
 
-# ③ 有没有走合并编译（有 Unity_*.cpp = 在合并）
-find Intermediate -name "Unity_*.cpp"
+# ③ 有没有走合并编译（★ UE5 的合并单元叫 Module.<模块名>.cpp，★ 不是 Unity_*.cpp）
+find Intermediate -path "*<Module>/Module.*.cpp"
+#    ★ 更快的判据：日志里出现 `Excluded from <Module> unity file: <文件>` ⇒ 合并编译正在跑
 ```
 
-★ **「改头就全量」在小模块里通常不是合并编译造成的** —— ★ 合并编译有源文件数阈值（默认 **32**，见下方表），
-★ 低于阈值的模块**根本不合并**；★ 真正的来源往往是**一个被十几个 .cpp include 的「枢纽头」**。
+★★ **「改头就全量」最常见的来源就是合并编译（Unity）** ——
+★ 启用时，模块里几十个 `.cpp` 被并成**一个**编译单元，★ **改任何一个头，那一个单元就整体重编**
+⇒ ★ 体感正是「改一个头、等一整个模块」。
+
+★ **小模块也会启用**：阈值（默认 **32**）算的是「自写 cpp ＋ UHT 生成的 `.gen.cpp`」——
+★ 一个带 20 个 `UCLASS` 的模块，光生成的 `.gen.cpp` 就 20 个，★ 21 个 cpp 一加就过线。
+★ **别拿「我的 cpp 不多」推断它没生效**，去找 `Module.<模块>.cpp`。
+
+★ 另一类来源是**一个被十几个 `.cpp` include 的「枢纽头」** —— ★ 合并**没**启用时才按这个算。
 
 **三个方向（★ 按持久性排序）**
 
@@ -188,8 +196,8 @@ find Intermediate -name "Unity_*.cpp"
 
 | 设置 | 默认 | ★ 别动它的理由 |
 |---|---|---|
-| `MinGameModuleSourceFilesForUnityBuild` | **32** | ★ **源文件少于 32 个的游戏模块不合并编译** ⇒ ★ 小模块「改头就全量」**不是它造成的**，别一上来就关合并 |
-| `bUseUnityBuild` | 生效（`IsUnity()` 对 Default 返 true） | ★ 大模块关它会让**全量编译更慢**；★ 它只在小模块或 IWYU 环境里天然不生效 |
+| `MinGameModuleSourceFilesForUnityBuild` | **32**（少于则强行关） | ★★ **别拿「我的 cpp 不多」推断它没生效**：计数含 UHT 生成的 `.gen.cpp` ⇒ ★ **UCLASS 多的模块很容易过线**。★ 真要确认就找 `Module.<模块>.cpp` |
+| `bUseUnityBuild` | 生效（`IsUnity()` 对 Default 返 true） | ★ **关它未必更快**：合并单元少解析 N 遍头，但改一行就要重编整单元 ⇒ ★ **先量再决定**，别凭直觉关 |
 | `bUseAdaptiveUnityBuild` | **开** | ★ 它专门把「近期频繁改的 .cpp」从合并单元里摘出来单独编 —— ★ 正是你要的效果，★ 别关 |
 | `bUseIncrementalLinking` | **关** | ★★ 官方注释写明：某些机器上有 PDB 相关 bug ⇒ ★ **默认关是有原因的**，★ 别为了「更快」手动开 |
 | UBA（Unreal Build Accelerator） | ★ **默认执行器** | ★ 不是可选项（源码注释 `We always use the UBA executor`）。★ 怀疑它作怪时用 `-NoUBA` **对照**排查，★ 不是常关 |
@@ -411,6 +419,20 @@ cmd //c "taskkill /IM dotnet.exe /F" # 杀 UBT（它等 cl，会一起僵着）
 ★★ **判据**：**看 DLL / 可执行产物的 mtime 有没有变** ——
 ★ 变了 ⇒ 在推进（再等等）；★ 没变 ⇒ 已经僵死（别等）。
 ★ **"命令没返回"什么都不能证明**（同 §4·17：后台任务状态也不是判据）。
+
+★★ **另一支卡死：UBA detour**（★ 症状不同，**别按上面那套治**）
+
+| | 上面那支（cl.exe 卡） | ★ 这一支（UBA detour 卡） |
+|---|---|---|
+| ★ 症状 | `cl.exe` 吃 ~1 GB 内存、日志一行不推进 | ★ 日志打完 `Using Unreal Build Accelerator local executor to run N action(s)` **之后十分钟零输出**，★ **`cl.exe` 压根没起来** |
+| ★ 判据 | 产物 mtime 不动 | ★ 同上，★ 但"没起 cl"是关键区别 |
+| ★ 处置 | 杀 `cl` ＋ `dotnet` 后原样重跑 | ★★ **原命令加 `-NoUBA`** |
+
+★ **实测**：两次卡死（一次 17 分钟、一次 4 分钟零进展），★ 加 `-NoUBA` 后 **2 分 9 秒** `Result: Succeeded`。
+
+★★ **别把 `-NoUBA` 理解成「换了个执行器」** —— ★ 抬头照样打
+`Using Unreal Build Accelerator local executor`，每个动作只标 `[NoUba]`：
+★ **它禁的是 detour（劫持注入），不是执行器本身。**
 
 ### 8·4 ★ 热重载怎么触发：**快捷键注入不生效**
 
