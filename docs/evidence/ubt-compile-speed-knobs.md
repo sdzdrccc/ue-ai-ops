@@ -20,6 +20,8 @@
 | 6 | `bUseIncrementalLinking` 默认 **false**，官方注释说某些机器有 PDB 相关 bug | `Configuration/Rules/TargetRules.cs` · 属性无初始值 ＋ 注释 `Currently disabled by default because it tends to behave a bit buggy` | ★ 源码原值 |
 | 7 | UBA 是**默认执行器**，不是可选项 | `Executors/ExecutorFactory.cs` · `GetExecutor` 末尾 `return GetUBAExecutor(...)`；注释 `We always use the UBA executor` | ★ 源码逻辑 |
 | 8 | `-MaxParallelActions` 是官方命令行参数，默认 `0`（自动） | `Configuration/BuildConfiguration.cs` · `[CommandLine("-MaxParallelActions")]` | ★ 源码原值 |
+| 9 | ★★ **默认 `0` = 按「核数 ＋ 可用内存」自动算**，手设会覆盖它 | `Configuration/BuildConfiguration.cs` 注释 `If 0 then code will pick a default based on the number of cores and memory available`；`Executors/UnrealBuildAccelerator/UBAExecutor.cs` · `GetDefaultNumParallelProcesses` → `Utils.GetMaxActionsToExecuteInParallel(..., bAllCores, MemoryPerActionBytes)` | ★ 源码逻辑 |
+| 10 | `bAllCores` 默认 **false** ⇒ 默认**只按物理核**，不算超线程 | `Configuration/BuildConfiguration.cs` · `public bool bAllCores { get; set; } = false;` | ★ 源码原值 |
 
 ★ **版本**：UE 5.9（`TargetRules.cs` 里 `MinGameModuleSourceFilesForUnityBuild` 仍在 `TargetRules` 上，
 ★ 而 `IncludeOrderVersion` 已用 `Unreal5_9` 枚举值）。★ **换版本必须重查第 1、2、3、7 条**。
@@ -47,6 +49,7 @@
 |---|---|---|
 | `bUseIncrementalLinking` 默认开、别关它 | ★ **默认就是关的**，官方说它有 bug | ★ 会让人去手动开启，★ 撞上 PDB 报错 |
 | `bUseUnityBuild` 在 5.9 改成了默认关 | ★ 仍默认生效（表达式换了写法，`IsUnity()` 对 Default 返回 true） | ★ 会让人白关一遍、且大模块关它反而更慢 |
+| ★ 「手动设 `-MaxParallelActions` 比默认快，按物理核拍个数」 | ★ **默认 `0` 已按「核数 ＋ 可用内存」自动算**；`bAllCores` 默认 false ⇒ 只算物理核 | ★ **手设 = 覆盖**，可能比默认更差 —— ★ 会让人做一次**负收益**的「优化」 |
 
 ★ **教训**：★ **「引擎默认值」是最容易被记忆腐蚀的一类断言** ——
 ★ 它不是「通用规律」（那种稳定），而是**版本内的事实**，★ 必须落到源码行。

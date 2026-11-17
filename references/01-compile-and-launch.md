@@ -173,7 +173,7 @@ find Intermediate -name "Unity_*.cpp"
 
 | 手段 | 做法 | ★ 注意 |
 |---|---|---|
-| 并行度 | `-MaxParallelActions=N` | ★ 官方参数（`BuildConfiguration.cs` 里的 `[CommandLine("-MaxParallelActions")]`）。★ N 取值**别按线程数**，按物理核 —— 超了会争内存反而更慢 |
+| 并行度 | ★★ **默认别动**（`MaxParallelActions = 0` 表示自动） | ★★ 默认 0 会让 UBT 按「核数 ＋ **可用内存**」自己算（`GetMaxActionsToExecuteInParallel`），★ 且 `bAllCores` 默认 false ⇒ **只按物理核**。★ **手动设 N 是覆盖这套计算** —— ★ 除非「默认 vs 手设」对比实测说它算错了，否则别设 |
 | 杀软实时扫描排除 | 工程目录 ＋ 引擎目录加白名单 | ★ **未量化**：收益随机器差异很大。★ 判据是**同一改动前后各跑一次比时间**，别信别人的百分比 |
 | 只编需要的 Target | 日常迭代只编 Editor 变体 | ★★ **打包前必须单独编一次打包目标** —— `WITH_EDITOR` 分支在打包版里不存在，★ 这类差异会**攒到打包时才集中爆** |
 | 别 clean / 别删 `Intermediate` | —— | ★ 见下条 |
