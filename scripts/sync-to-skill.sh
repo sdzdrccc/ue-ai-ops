@@ -101,7 +101,16 @@ sync_one() {
     #   ★★ 合起来的判据：★ **「拷什么」和「数什么」必须同源** ——
     #      ★ 否则它们会各自漂移，然后**互相指责**（这次的"同步不完整"就是这么来的）。
     rm -f "$DEST"/scripts/* 2>/dev/null
-    find "$SRC/scripts" -maxdepth 1 -type f -exec cp {} "$DEST/scripts/" \; 2>/dev/null
+    # ★★ 2026-11-17 修（★ 同一条教训的第五次，★ 这次是**环境差异**版）：
+    #   原写法 `find … -exec cp {} "$DEST/scripts/" \; 2>/dev/null` —— ★ 在**环境变量很大**的机器上
+    #   实测直接失败：`find: The environment is too large for exec().`
+    #   ★ 而 `2>/dev/null` 把它吞了 ⇒ ★ 报告只显示「数量不一致」，★ **看不出是哪一步坏的**。
+    #   ⇒ 定稿：★ **改用 shell 循环**（不 fork `find -exec`）；★ 并且 **不再吞掉 cp 的错误**。
+    #   ★ 判据：★ 拷不进去必须**当场说话** —— ★ 静默失败比报错贵得多。
+    for f in "$SRC"/scripts/*; do
+        [ -f "$f" ] || continue          # ★ 只拷文件（`hooks/` 这类目录本就不同步）
+        cp "$f" "$DEST/scripts/" || echo "  ✗ 拷贝失败: $(basename "$f")"
+    done
     chmod +x "$DEST"/scripts/* 2>/dev/null
 
     # ── 3. 记一份来源标记（★ 让「副本从哪来」可查）──
